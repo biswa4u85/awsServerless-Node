@@ -1,0 +1,72 @@
+service: test-api
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+provider:
+  name: aws
+  runtime: nodejs6.10
+  region: 'us-east-2'
+  stage: dev
+  profile: awsTestProfile
+  # deploymentBucket: 
+  #   name: biswa-awstest
+
+  iamRoleStatements:
+  - Effect: Allow
+    Action:
+      - lambda:InvokeFunction
+      - lambda:InvokeAsync
+    Resource: "*"
+  - Effect: Allow
+    Action:
+      - dynamodb:*
+    Resource: "*"
+    
+package:
+  exclude:
+    - node_modules/**/*
+  include:
+    - handler.ts
+
+functions:
+  updateUser:
+    handler: src/user/routes.update
+    events:
+      - http:
+          path: user
+          method: POST
+          cors: true
+
+  removeUser:
+    handler: src/user/routes.remove
+    events:
+      - http:
+          path: user
+          method: DELETE
+          cors: true
+
+  getUser:
+    handler: src/user/routes.get
+    events:
+      - http:
+          path: user/{type}
+          method: GET
+          cors: true
+
+resources:
+  Resources:
+    awsTest:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: awsTest
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        StreamSpecification:
+          StreamViewType: KEYS_ONLY
